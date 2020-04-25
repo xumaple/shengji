@@ -1,0 +1,10 @@
+name = "worker"
+type = "webpack"
+account_id = "9fd3ed881aac73dc108cc4b7de50234b"
+workers_dev = true
+route = ""
+zone_id = ""
+
+[[kv-namespaces]]
+binding = "CLICKER"
+id = "9d107842938f456f821cbed26b62ed31"
