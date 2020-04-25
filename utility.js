@@ -15,6 +15,14 @@ export async function FilterEvent(event, api, func) {
     event.respondWith(func(event.request));
 }
 
+export function generateCookie(game_id) {
+    var date = new Date();
+
+    date.setTime(+ date + cookieTTL);
+
+    return "user=" + require('crypto').randomBytes(8).toString('hex') + "; game= " + game_id.toString('hex') + "; expires=" + date.toGMTString() + "; path=/";
+}
+
 export function getCookies(request) {
     let cookieJar = {}
     const cookieString = request.headers.get('Cookie')
