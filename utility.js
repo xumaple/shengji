@@ -15,3 +15,5 @@ export async function FilterEvent(event, api, func) {
     event.respondWith(func(event.request));
 }
 
+export const cookieTTL = 5 * 60 * 1000; // 5 minutes
+export const heartbeatLength = 1000 // 1 second

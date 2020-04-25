@@ -37,7 +37,7 @@ async function handleNotReady(request) {
  *       False means still waiting on all players
  *     players: []
  *       List is size 3, indicating players left, opposite and right
- *       Each element will be player ID
+ *       Each element will be player ID, or null if player has not joined
  *   }
  */
 async function handleHeartbeat(request) {
