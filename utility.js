@@ -6,9 +6,12 @@
  * @param {Function} func
  */
 export async function FilterEvent(event, api, func) {
-    const url = event.request.url;
-    if (api !== null && url !== api) { return; }
-    console.log(func);
+    if (api !== null) {
+        const url = event.request.url;
+        const urlapi = url.substr(url.indexOf('workers.dev') + 11);
+        console.log(urlapi);
+        if (urlapi !== api) { return; }
+    }
     event.respondWith(func(event.request));
 }
 
