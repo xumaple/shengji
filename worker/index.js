@@ -51,6 +51,10 @@ async function handleRequest(request) {
 }
 
 async function displayButton(request) {
+    for (i = 0; i < 50; ++i) {
+        await CLICKER.get(key);
+        console.log('hi');
+    }
     const current = await CLICKER.get(key);
     const prev = await CLICKER.get('prev');
     const cookie = getCookie(request, 'user');

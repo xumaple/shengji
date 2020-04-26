@@ -7,20 +7,25 @@
  */
 export async function FilterEvent(event, api, func) {
     if (api !== null) {
-        const url = event.request.url;
-        const urlapi = url.substr(url.indexOf('workers.dev') + 11);
-        console.log(urlapi);
-        if (urlapi !== api) { return; }
+        const url = new URL(event.request.url);
+        console.log(url.pathname, api);
+        if (url.pathname !== api) { return; }
     }
+    console.log('success')
     event.respondWith(func(event.request));
 }
 
-export function generateCookie(game_id) {
+export function generateCookie(dict) {
     var date = new Date();
 
     date.setTime(+ date + cookieTTL);
+    cookie = ''
+    dict.forEach((key, value) => { cookie = cookie.concat(key, '=', value, '; ')})
+    return cookie + "expires=" + date.toGMTString() + "; path=/";
+}
 
-    return "user=" + require('crypto').randomBytes(8).toString('hex') + "; game= " + game_id.toString('hex') + "; expires=" + date.toGMTString() + "; path=/";
+export function newUserCookie() {
+    return require('crypto').randomBytes(8).toString('hex');
 }
 
 export function getCookies(request) {
@@ -29,7 +34,7 @@ export function getCookies(request) {
     if (cookieString) {
         let cookies = cookieString.split(';')
         cookies.forEach(cookie => {
-            result[cookie.split('=')[0].trim()] = cookie.split('=')[1]
+            cookieJar[cookie.split('=')[0].trim()] = cookie.split('=')[1]
         })
     }
     return cookieJar

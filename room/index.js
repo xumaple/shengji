@@ -1,54 +1,61 @@
-import * as utility from '../../utility'
+import * as utility from '../utility'
+import { FilterEvent } from '../utility'
+import { join, handleReady, handleNotReady, handleHeartbeat } from './api.js'
 
-var game_id = 100000;
+var game_id = 'da71e1ee';
 
-html = `<!DOCTYPE html>
+let html = `<!DOCTYPE html>
 <html lang="en">
     <head>
         <title>Shengji</title>
     </head>
     <body>
-        <div id="player-left"></div>
-        <div id="player-opposite"></div>
-        <div id="player-right"></div>
         <script>
+            async function cleanTemplate() {
+                document.body.innerHTML = \`
+                    <div id="player-left"></div>
+                    <div id="player-opposite"></div>
+                    <div id="player-right"></div>
+                    <div id="center">
+                        <div id="center-left"></div>
+                        <div id="center-opposite"></div>
+                        <div id="center-right"></div>
+                        <div id="center-me"></div>
+                    </div>
+                    <div id="player-me"><form id='readybutton'></form></div>
+                \`
+            }
+
+            var ready = false;
             async function checkPlayers() {
-                var ready = false;
-                const json = await fetch('/api/heartbeat').then(response => {console.log(response); return response.json()});
+                const json = await fetch('/api/heartbeat/', {credentials: 'same-origin'}).then(response => {console.log(response); return response.json()});
                 if (json.go) {
-                    return;                                                     //TODO
+                    setTimeout(runGame, 0);
+                    return;
                 }
                 document.querySelector("player-left").innerHTML = json.players[0];
                 document.querySelector("player-opposite").innerHTML = json.players[1];
                 document.querySelector("player-right").innerHTML = json.players[2];
-                if (json.ready) {
-                    if (!ready) {
-                        ready = true;
-                        var old_button = document.getElementById('notready');
-                        if (old_button) {
-                            document.body.removeChild(old_button);
-                        }
-                    }
-                    var ready_button = document.createElement("div");
-                    ready_button.id = 'ready';
-                    ready_button.innerHTML = '<form><button type="submit" formmethod="post"> Not Ready </button></form>';
-                    document.body.appendChild(ready_button);
-                } else {
+                if (json.ready !== ready) {
+                    ready = json.ready
+                    let button = document.getElementById('readybutton')
                     if (ready) {
-                        ready = false;
-                        var old_button = document.getElementById('ready');
-                        if (old_button) {
-                            document.body.removeChild(old_button);
-                        }
+                        button.innerHTML = '<button onclick=() => {fetch("/api/notready/", {credentials: "same-origin"})}>Cancel</button>'
                     }
-                    var ready_button = document.createElement("div");
-                    ready_button.id = 'notready';
-                    ready_button.innerHTML = '<form><button type="submit" formmethod="post"> Ready! </button></form>'
-                    document.body.appendChild(ready_button);
+                    else {
+                        button.innerHTML = '<button onclick=() => {fetch("/api/ready/", {credentials: "same-origin"})}>Ready</button>'
+                    }
                 }
-                setTimeout(checkPlayers, utility.heartbeatLength);
+
+                setTimeout(checkPlayers, $(utility.heartbeatLength));
             }
 
+            async function runGame() {
+                cleanTemplate()
+                document.getElementById('center-me').innerHTML = 'Running game...'
+            }
+
+            cleanTemplate()
             checkPlayers()
 
         </script>
@@ -56,46 +63,25 @@ html = `<!DOCTYPE html>
 </html>`
 
 addEventListener('fetch', event => {
-    event.respondWith(handleRequest(event.request))
+    FilterEvent(event, '/', handleRequest)
+    FilterEvent(event, '/api/ready/', handleReady); 
+    FilterEvent(event, '/api/notready/', handleNotReady); 
+    FilterEvent(event, '/api/heartbeat/', handleHeartbeat); 
 })
 
 async function handleRequest(request) {
-    console.log(request.url)
-    if (request.method === 'GET') {
-        return get(request);
-    }
-    return post(request);
-}
-
-function get(request) {
-    console.log('get')
-    if (utility.getCookie(request)) {
+    const prevCookie = utility.getCookies(request)
+    // TODO cookie should actually already be given to this function. No need to set cookie here in the future. 
+    let user_cookie = utility.newUserCookie();
+    let cookies = {'user': user_cookie, 'game': game_id};
+    await join(request, cookies);
+    console.log("*********", utility.generateCookie(cookies))
+    if (prevCookie && prevCookie.user) {
         return new Response(html, {
             headers: { 'content-type': 'text/html' },
         })
     }
-    var cookie = utility.generateCookie(game_id);
-    GAME.put(cookie, cookie);
-    GAME.put(cookie + '-position', position);
-    GAME.put(game_id + '-' + position + '-user', cookie);
-    GAME.put(game_id + '-' + position + '-ready', false); //is this correct?
     return new Response(html, {
-        headers: { 'content-type': 'text/html', 'Set-Cookie': cookie },
-    })
-}
-
-async function post(request) {
-    console.log('post')
-    const cookie = utility.getCookie(request);
-    const position = await GAME.get(cookie + '-position');
-    const ready = await GAME.get(game_id + '-' + position + '-ready');
-    if (ready) {
-        await fetch('/api/notready');
-    } else {
-        await fetch('/api/ready');
-    }
-    //await GAME.put(game_id + '-' + position + '-ready', !ready);
-    return new Response(html, {
-        headers: { 'content-type': 'text/html' },
+        headers: { 'content-type': 'text/html', 'Set-Cookie': utility.generateCookie(cookies) },
     })
 }
