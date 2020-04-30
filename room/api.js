@@ -1,4 +1,6 @@
-import * as utility from '../utility'
+import * as utility from '../utility/cookies'
+import * as constants from '../utility/constants'
+import { CallFetch } from '../utility/events'
 
 /**
  * Called when user presses "Ready" button
@@ -23,7 +25,7 @@ export async function handleNotReady(request) {
 async function handleReadyButtonHelper(request, newVal) {
     const cookies = utility.getCookies(request)
     const position = await GAME.get(cookies.user.concat('-position'))
-    GAME.put(cookies.game.concat('-', position, '-ready'), newVal, utility.kvTTL)
+    GAME.put(cookies.game.concat('-', position, '-ready'), newVal, constants.kvTTL)
     return new Response(
         JSON.stringify({}), 
         { headers: { 'content-type': 'application/json'}});
@@ -47,86 +49,122 @@ async function handleReadyButtonHelper(request, newVal) {
 export async function handleHeartbeat(request) {
     console.log('heartbeat')
     const cookies = utility.getCookies(request)
-    // request.headers.forEach((k, v) => {console.log(k, v)})
-    // console.log(request.headers.keys())
-    for (const k of request.headers.keys()) {
-        console.log(k);
-    }
     console.log(request.headers.get('cookie'))
     console.log(cookies["game"])
     let getKey = (pos, command) => { return cookies.game.concat('-', pos, '-', command) }
     [GAME.get(cookies.game.concat)]
-    promises = []
-    for (i = 0; i < 4; ++i) { promises.push(GAME.get(getKey(i, 'user'))) }
-    for (i = 0; i < 4; ++i) { promises.push(GAME.get(getKey(i, 'ready'))) }
+    let promises = []
+    for (let i = 0; i < 4; ++i) { promises.push(GAME.get(getKey(i, 'user'))) }
+    for (let i = 0; i < 4; ++i) { promises.push(GAME.get(getKey(i, 'ready'))) }
     const values = await Promise.all(promises);
     const myPosition = values.indexOf(cookies.user);
+    if (myPosition === -1) {
+        // TODO
+    }
     const now = Date.now()
-    GAME.put(getKey(myPosition, 'heart'), now, utility.KvTTL)
-    players = promises.slice(myPosition + 1, 4)
+    GAME.put(getKey(myPosition, 'heart'), now, constants.KvTTL)
+    let players = promises.slice(myPosition + 1, 4)
     if (myPosition !== 3) {
         players.push(...promises.slice(myPosition))
     }
-    go = (promises[4] === '1' && promises[5] === '1' && promises[6] === '1' && promises[7] === '1')
+    let go = (promises[4] === '1' && promises[5] === '1' && promises[6] === '1' && promises[7] === '1')
+    console.log('go', go)
     if (go) {
         // Grab heartbeats to heck that nobody disconnected
         heartPromises = []
-        for (i = 0; i < 4; ++i) { 
+        for (let i = 0; i < 4; ++i) { 
             if (i !== myPosition) heartPromises.push(GAME.get(getKey(i, 'heart')))
             else heartPromises.push(null)
         }
         go = await Promise.all(heartPromises).then(heartbeats => 
-            heartbeats.filter(beat => now - beat > utility.heartbeatLength * utility.consideredDead))
+            heartbeats.filter(beat => now - beat > constants.heartbeatLength * constants.consideredDead))
     }
+    console.log(JSON.stringify({go, players, ready: promises.myPosition === 'true'}))
     return new Response(
         JSON.stringify({go, players, ready: promises.myPosition === 'true'}), 
-        { headers: { 'content-type': 'application/json'}});
+        { headers: { 'content-type': 'application/json;charset=UTF-8'}});
 }
 
 var _joined_success = 1;
 var _joined_failure = -1;
 
-export async function join(request, cookies) { // TODO remove cookies
+export async function join(request) { // TODO remove cookies
+    // return new Response('hello daniel', { headers: { 'content-type': 'text/plain' } });
+    console.log('entering join')
+    let cookies = utility.getCookies(request)
     let user = cookies.user;
-    GAME.put(user, user); // TODO change to username
-    var joined = 0;
-    try_join(user, cookies.game)
-    while (joined === 0);
-    return joined === _joined_success;
+    GAME.put(user, user, constants.kvTTL); // TODO change to username
+    // return new Response(JSON.stringify({'frank': 'frank'}), { headers: { 'content-type': 'application/json'}})
+    return CallFetch(tryJoin);
+    // await fetch(new Request('http://room.shengji.workers.dev/api/join/')).then(response => response.json()).then(data => {console.log(data)}).catch(error=>{console.log(error)});//, {credentials: 'same-origin'})
+    // console.log('hello');
+    // // while (joined === 0);
+    // // return joined === _joined_success;
+    // console.log(JSON.stringify({joined: joined === _joined_success}));
+    // return new Response(
+    //     JSON.stringify({joined: joined === _joined_success}), 
+    //     { headers: { 'content-type': 'application/json'}});
 }
 
-async function try_join(user, game) {
-    console.log('try_join')
+export async function tryJoin(request) {
+    console.log('entering tryJoin')
+    let cookies = utility.getCookies(request)
+    let game = cookies.game;
     let key = game.concat('-users');
     console.log('greetings')
-    let num_users = GAME.get(key);
-    if (num_users === null) {
+    let num_users = parseInt(await GAME.get(key));
+    if (num_users === NaN) {
         num_users = 0
     }
-    console.log('hello')
+    console.log('hello', num_users, NaN)
     if (num_users >= 3) {
-        joined = _joined_failure;
+        return new Response(JSON.stringify({joined: _joined_failure}), {
+            headers: { 'content-type': 'text/json' },
+        })
     }
-    GAME.put(key, num_users + 1);
-    try_join_helper(user, game, num_users, 0);
+    GAME.put(key, num_users + 1, constants.kvTTL);
+    return CallFetch(tryJoinHelper, {position: num_users, count: 0});
 }
 
-async function try_join_helper(user, game, position, count) {
-    console.log('try_join_helper')
+async function tryJoinHelper(request) {
+    console.log('entering tryJoinHelper');
+    const j = request.body.json();
+    const position = j.position;
+    const count = j.count;
     const key = game.concat('-', position, '-user');
     if (count >= 1) {
-        GAME.put(user + '-position', position);
-        GAME.put(game + '-' + position + '-user', user);
-        GAME.put(game + '-' + position + '-ready', false); //is this correct?
-        joined = _joined_success;
-        return;
+        GAME.put(user + '-position', position, constants.kvTTL);
+        GAME.put(game + '-' + position + '-user', user, constants.kvTTL);
+        GAME.put(game + '-' + position + '-ready', false, constants.kvTTL); //is this correct?
+        return new Response(JSON.stringify({joined: _joined_success}), {
+            headers: { 'content-type': 'application/json' },
+        })
     }
     if (count == 0) {
-        await GAME.put(key, user);
+        await Game.put(key, user, constants.kvTTL);
     }
     if (user === await GAME.get(key)) {
-        setTimeout(try_join_helper(user, game, position, count + 1), 0);
-        return;
+        return CallFetch(tryJoinHelper, {position, count: count + 1});
     }
-    try_join(user, game);
+    return CallFetch(tryJoin);
 }
+
+// export async function tryJoinHelper(user, game, position, count) {
+//     console.log('entering tryJoinHelper')
+//     const key = game.concat('-', position, '-user');
+//     if (count >= 1) {
+//         GAME.put(user + '-position', position, constants.kvTTL);
+//         GAME.put(game + '-' + position + '-user', user, constants.kvTTL);
+//         GAME.put(game + '-' + position + '-ready', false, constants.kvTTL); //is this correct?
+//         joined = _joined_success;
+//         return;
+//     }
+//     if (count == 0) {
+//         await GAME.put(key, user, constants.kvTTL);
+//     }
+//     if (user === await GAME.get(key)) {
+//         setTimeout(tryJoinHelper(user, game, position, count + 1), 10);
+//         return;
+//     }
+//     tryJoin(user, game);
+// }
