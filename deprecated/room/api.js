@@ -113,10 +113,10 @@ export async function tryJoin(request) {
     let key = game.concat('-users');
     console.log('greetings')
     let num_users = parseInt(await GAME.get(key));
-    if (num_users === NaN) {
+    if (isNaN(num_users) === true) {
         num_users = 0
     }
-    console.log('hello', num_users, NaN)
+    console.log('hello', num_users, isNaN(num_users))
     if (num_users >= 3) {
         return new Response(JSON.stringify({joined: _joined_failure}), {
             headers: { 'content-type': 'text/json' },
@@ -126,27 +126,34 @@ export async function tryJoin(request) {
     return CallFetch(tryJoinHelper, {position: num_users, count: 0});
 }
 
-async function tryJoinHelper(request) {
-    console.log('entering tryJoinHelper');
-    const j = request.body.json();
-    const position = j.position;
-    const count = j.count;
-    const key = game.concat('-', position, '-user');
-    if (count >= 1) {
-        GAME.put(user + '-position', position, constants.kvTTL);
-        GAME.put(game + '-' + position + '-user', user, constants.kvTTL);
-        GAME.put(game + '-' + position + '-ready', false, constants.kvTTL); //is this correct?
-        return new Response(JSON.stringify({joined: _joined_success}), {
-            headers: { 'content-type': 'application/json' },
+export async function tryJoinHelper(request) {
+    try {
+        console.log('entering tryJoinHelper');
+        const j = request.body.json();
+        const position = j.position;
+        const count = j.count;
+        const key = game.concat('-', position, '-user');
+        if (count >= 1) {
+            GAME.put(user + '-position', position, constants.kvTTL);
+            GAME.put(game + '-' + position + '-user', user, constants.kvTTL);
+            GAME.put(game + '-' + position + '-ready', false, constants.kvTTL); //is this correct?
+            return new Response(JSON.stringify({joined: _joined_success}), {
+                headers: { 'content-type': 'application/json' },
+            })
+        }
+        if (count == 0) {
+            await Game.put(key, user, constants.kvTTL);
+        }
+        if (user === await GAME.get(key)) {
+            return CallFetch(tryJoinHelper, {position, count: count + 1});
+        }
+        return CallFetch(tryJoin);
+    } catch(error) {
+        console.log(error, request);
+        return new Response(JSON.stringify({error: error.toString(), request: request.body.text()}), {
+            headers: { 'content-type': 'text/json' },
         })
     }
-    if (count == 0) {
-        await Game.put(key, user, constants.kvTTL);
-    }
-    if (user === await GAME.get(key)) {
-        return CallFetch(tryJoinHelper, {position, count: count + 1});
-    }
-    return CallFetch(tryJoin);
 }
 
 // export async function tryJoinHelper(user, game, position, count) {

@@ -1,0 +1,40 @@
+{
+  "name": "Shengji",
+  "version": "1.0.0",
+  "description": "TEMP README",
+  "main": "index.js",
+  "dependencies": {
+    "eslint": "^4.8.0",
+    "isomorphic-fetch": "==2.2.1",
+    "jsonlint": "==1.6.2",
+    "moment": "==2.18.1",
+    "prop-types": "==15.6.0",
+    "react": "==16.11",
+    "react-dom": "==16.11",
+    "react-infinite-scroll-component": "==2.4.0"
+  },
+  "devDependencies": {
+    "babel-core": "^7.0.0-0",
+    "babel-loader": "==7.1.2",
+    "babel-preset-env": "==1.7.0",
+    "babel-preset-react": "==6.24.1",
+    "webpack": "==4.30.0",
+    "webpack-cli": "==3.3.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack --mode development --display-error-details --watch",
+    "build": "webpack --mode production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xumaple/shengji.git"
+  },
+  "keywords": [],
+  "author": "Shengji <wesleylc@umich.edu>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xumaple/shengji/issues"
+  },
+  "homepage": "https://github.com/xumaple/shengji#readme"
+}

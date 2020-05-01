@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div style="margin-left:27.5%">
+        <p style="color:#ff0000">
+            {% if incorrect %}
+                Username or password is incorrect. Please try again.
+            {% endif %}
+        </p>
+        <form action="" method="post" enctype="multipart/form-data">
+            <div class="form"><input type="text" name="username" placeholder="username"/></div>
+            <div class="form"><input type="password" name="password" placeholder="password"/></div>
+            <div class="form"><input type="submit" name="login" value="login"/></div>
+        </form>
+        Don't have an account? <a href="{{signup}}" class="hyperlink"> Sign up </a>
+    </div>
+{% endblock %}
+

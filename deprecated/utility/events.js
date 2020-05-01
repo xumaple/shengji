@@ -44,7 +44,6 @@ export async function CallFetch(func, postRequest=null, asJson=false) {
     }
     for (const apiObj of API_HANDLES) {
         if (apiObj.handle === func) {
-            console.log('found func')
             let promise = postRequest === null ? await fetch(SERVER + apiObj.api)
             .then(response => { console.log('response received from', apiObj.api, ': ', response); return response; })
             .catch(error => {
@@ -60,7 +59,7 @@ export async function CallFetch(func, postRequest=null, asJson=false) {
                 console.log(error);
                 return error;
             });
-            console.log('response is', promise.text());
+            console.log('response is', promise);
             if (asJson !== true) return promise;
             return promise.then(response => response.json()).catch(error => {
                 console.log(error);
@@ -68,4 +67,5 @@ export async function CallFetch(func, postRequest=null, asJson=false) {
             });
         }
     }
+    console.log('uh oh!')
 }

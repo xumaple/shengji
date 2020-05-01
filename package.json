@@ -1,0 +1,25 @@
+{
+  "name": "Shengji",
+  "version": "1.0.0",
+  "description": "To run:",
+  "main": "index.js",
+  "dependencies": {
+    "react": "^16.11.0",
+    "react-localizer": "^2.1.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/weslelc/Shengji.git"
+  },
+  "keywords": [],
+  "author": "Shengji <wesleylc@umich.edu>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/weslelc/Shengji/issues"
+  },
+  "homepage": "https://github.com/weslelc/Shengji#readme"
+}

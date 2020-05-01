@@ -1,1 +1,7 @@
-reacttest/
+*reacttest/
+*.DS_Store
+*.o
+*.d
+node_modules
+source/api/static/js/*_bundle.js
+*__pycache__

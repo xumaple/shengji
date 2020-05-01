@@ -1,0 +1,2 @@
+"""Shengji package initializer"""
+
