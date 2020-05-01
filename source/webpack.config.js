@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
   entry: {
-    main: './api/jsx/index.jsx',
+    room: './api/jsx/room.jsx',
   },
   output: {
     path: path.join(__dirname, '/api/static/js/'),

@@ -1,4 +1,4 @@
-FROM mapoxu/shengjibase:1.0.0
+FROM mapoxu/shengjibase:1.0.1
 
 COPY . /baseimg
 WORKDIR /baseimg

@@ -1,11 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import firebase from '../static/js/firebase.js'
 
-class HelloMessage extends React.Component {
+class Room extends React.Component {
     constructor(props) {
         super(props);
-        const { name } = props;
-        this.state = {name}
     }
 
     // componentDidMount() {
@@ -15,14 +14,15 @@ class HelloMessage extends React.Component {
     // }
 
   render() {
-    return <div>Hello, {this.state.name} 👋</div>;
+    return <div>Hello, daniel 👋</div>;
   }
 }
 
 
 ReactDOM.render(
 
-    <HelloMessage name="daniel lee"/>,
+    <Room db={firebase.database().ref()}
+    />,
     document.getElementById('reactEntry'),
 
 );
