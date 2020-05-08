@@ -1,4 +1,4 @@
-{% from "macros.html" import declare with context %}
+{% from "macros.html" import declare, includejs with context %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -10,6 +10,7 @@
         {% include "heading.html" %}
 
         {% block variables %}
+            {{ declare("user", user) }}
         {% endblock %}
 
         {% include "firebase.html" %}

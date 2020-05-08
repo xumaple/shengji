@@ -2,26 +2,228 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import firebase from '../static/js/firebase.js'
 
+var user = document.getElementById('user').textContent
+
 class Room extends React.Component {
     constructor(props) {
         super(props);
+
+        this.state = {game: 'loading'};
+
+        this.props.db.child('state').on('value', (snapshot) => {
+            const val = snapshot.val();
+            console.log(val)
+            if (val !== null) {
+                this.setState({game: val});
+            }
+        })
+
+        this.heartbeat = this.heartbeat.bind(this);
     }
 
-    // componentDidMount() {
-    //     fetch("https://worker.shengji.workers.dev/api/v1/")
-    //     .then(response => response.json())
-    //     .then(data => { this.setState({name: data.display}); })
-    // }
+    heartbeat() {
+        // console.log("heartbeat call received")
+        fetch(this.props.url.concat('heartbeat/'))
+            // .then(response => console.log('heart back'))
+            .catch(error => { console.log('cannot connect to server', error); });
+        setTimeout(this.heartbeat, 2000);
+    }
 
-  render() {
-    return <div>Hello, daniel 👋</div>;
+    componentDidMount() {
+        // console.log("heartbeat called")
+        setTimeout(this.heartbeat, 0);
+        window.addEventListener('beforeunload', (e) => {
+            e.preventDefault();
+            fetch(this.props.url.concat('leave/'));
+            return false;
+        });
+    }
+
+    componentWillUnmount() {
+        fetch(this.props.url.concat('leave/'));
+    }
+
+    render() {
+        if (this.state.game === 'loading') {
+            return <div>Hello 👋, The game is loading</div>;
+        }
+        if (this.state.game === 'waiting') {
+            return <div>
+                {/*<Header url={this.props.url} />*/}
+                <WaitingRoom url={this.props.url} db={this.props.db.child('players')} />
+            </div>
+        }
+        return <div>game</div>
   }
+}
+
+
+
+function Header(props) {
+
+    return <div>
+        <script>window.onBeforeUnload = {() => {
+            return 'You sure?';
+        }}
+        window.onUnload = {() => {
+            fetch(this.props.url.concat('leave/'));
+        }}
+        </script>
+    </div>
+}
+
+function getPlayer(snapshot) {
+    console.log('entry', snapshot.val().entry)
+    const {entry, ready} = snapshot.val();
+    return {player: snapshot.key, ready, entry};
+}
+
+Array.prototype.pushPlayer = function(player) {
+    // Sorts by entry
+    // Returns index of user, or null
+    // Always just searches for user and position linearly, this is fine since we are working with max 4 elements
+    let userIndex = null;
+    let added = false;
+    const { entry } = player;
+    let count = 0;
+    for (let i = 0; i < this.length; ++i) {
+        if (this[i].player === user) {
+            userIndex = i;
+        }
+        if (added === false && entry < this[i].entry) {
+            this.splice(i, 0, player);
+            --i;
+            added = true;
+        }
+        ++count;
+        if (count > 10) break;
+    }
+    if (added === false) {
+        this.push(player);
+        if (userIndex === null && player.player === user) {
+            userIndex = this.length - 1;
+        }
+    }
+
+    // if (this.length > 4) {
+    //     this.pop()
+    //     if (userIndex > 3) {
+    //         userIndex = null;
+    //     }
+    // }
+    return userIndex;
+};
+
+// Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
+
+Array.prototype.popPlayer = function(player) {
+    console.log('95', this)
+    let userIndex = null;
+    for (let i = 0; i < this.length; ++i) {
+        console.log(i, this[i].player, player.player)
+        if (this[i].player === player.player) {
+            this.remove(i);
+            console.log(this.remove(i), this);
+            --i;
+        }
+        else if (this[i].player === user) {
+            userIndex = i;
+        }
+    }
+    return userIndex;
+}
+
+Array.prototype.changePlayer = function(player) {
+    console.log(player, this)
+    for (let i = 0; i < this.length; ++i) {
+        if (this[i].player === player.player) {
+            this[i] = player;
+            break;
+        }
+    }
+}
+
+class WaitingRoom extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {players: [], userPos: null};
+
+        // this.props.db.orderByChild('entry').once('value', (snapshot) => {
+        //     console.log('53', snapshot);
+        //     // const val = snapshot.val();
+        //     // if (val !== null) {
+        //     //     console.log(val)
+        //     //     this.setState({players: val});
+        //     // }
+        //     const players = []
+        //     snapshot.forEach((player) => {
+        //         players.push(getPlayer(snapshot));
+        //     });
+        //     this.setState({players});
+        // })
+
+        this.props.db.on('child_added', (snapshot) => {
+            console.log('118')
+            let userPos = this.state.players.pushPlayer(getPlayer(snapshot));
+            this.setState({players: this.state.players, userPos});
+        })
+
+        this.props.db.on('child_removed', (snapshot) => {
+            let userPos = this.state.players.popPlayer(getPlayer(snapshot));
+            this.setState({players: this.state.players, userPos});
+        })
+
+        this.props.db.on('child_changed', (snapshot) => {
+            console.log('113')
+            this.state.players.changePlayer(getPlayer(snapshot));
+            this.setState({players: this.state.players});
+        })
+
+        this.handleClick = this.handleClick.bind(this);
+    }
+
+    handleClick(e) {
+        e.preventDefault(); 
+        const { players, userPos } = this.state;
+        const ready = players[userPos].ready;
+        const url = ready === false ? '' : 'not';
+        console.log('148')
+        fetch(this.props.url.concat(url + 'ready/')).then((response) => {console.log('back from fetch');});
+        players[userPos].ready = !ready;
+        this.setState({players});
+    }
+
+    render() {
+        console.log('rendering', this.state.players, this.state.userPos);
+        let { players } = this.state;
+        if (players.length > 4) {
+            players = players.slice(4);
+        }
+        return <div>
+            <div>Players {this.state.userPos} {user}</div>
+            {players.map((info, i) => {
+                const {player, ready} = info;
+                console.log("80", info.entry);
+                return <div>{player} {ready === false ? 'Not Ready' : 'Ready    '} {this.state.userPos === i ? <span>
+                    <button onClick={this.handleClick}>{ready === false ? 'Ready' : 'Cancel'}</button>
+                    </span> : ''}</div>
+            })}
+        </div>;
+    }
 }
 
 
 ReactDOM.render(
 
-    <Room db={firebase.database().ref()}
+    <Room 
+        url={'/api/v1/room/'.concat('da71e1ee', '/')}
+        db={firebase.database().ref('games/da71e1ee')}
     />,
     document.getElementById('reactEntry'),
 

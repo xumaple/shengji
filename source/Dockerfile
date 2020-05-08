@@ -1,4 +1,4 @@
-FROM mapoxu/shengjibase:1.0.1
+FROM mapoxu/shengjibase:1.0.2
 
 COPY . /baseimg
 WORKDIR /baseimg
@@ -7,7 +7,7 @@ EXPOSE 8000
 
 #RUN npm run build
 #RUN ls api/static/js
-#RUN cat api/js/member_bundle.js 
+#RUN cat api/js/member_bundle.js
 
 CMD npm run dev
 # CMD export LC_ALL=C.UTF-8; \

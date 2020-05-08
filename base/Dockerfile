@@ -18,4 +18,4 @@ RUN apt-get install -y npm; \
     npm install --save react prop-types react-dom bootstrap reactstrap style-loader react-localizer react-widgets react-router-dom react-copy-to-clipboard firebase; \
     npm install --save-dev css-loader
 
-RUN pip3 install --upgrade pip && pip install -r requirements.txt
+RUN export LANG=C.UTF-8 && pip3 install --upgrade pip && pip install -r requirements.txt
