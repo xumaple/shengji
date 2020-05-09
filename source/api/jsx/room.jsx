@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import firebase from '../static/js/firebase.js'
 
 var user = document.getElementById('user').textContent
@@ -14,7 +16,7 @@ class Room extends React.Component {
             const val = snapshot.val();
             console.log(val)
             if (val !== null) {
-                this.setState({game: val});
+                this.setState({game: val, connected: true});
             }
         })
 
@@ -24,7 +26,13 @@ class Room extends React.Component {
     heartbeat() {
         // console.log("heartbeat call received")
         fetch(this.props.url.concat('heartbeat/'))
-            // .then(response => console.log('heart back'))
+            .then(response => response.json())
+            .then(data => {
+                console.log('disconnected:', data.disconnected); 
+                if (data.disconnected === true) {
+                    this.setState({connected: false});
+                }
+            })
             .catch(error => { console.log('cannot connect to server', error); });
         setTimeout(this.heartbeat, 2000);
     }
@@ -49,7 +57,7 @@ class Room extends React.Component {
         }
         if (this.state.game === 'waiting') {
             return <div>
-                {/*<Header url={this.props.url} />*/}
+                <Header url={this.props.url} connected={this.state.connected} />
                 <WaitingRoom url={this.props.url} db={this.props.db.child('players')} />
             </div>
         }
@@ -60,15 +68,22 @@ class Room extends React.Component {
 
 
 function Header(props) {
-
     return <div>
-        <script>window.onBeforeUnload = {() => {
-            return 'You sure?';
-        }}
-        window.onUnload = {() => {
-            fetch(this.props.url.concat('leave/'));
-        }}
-        </script>
+        <Modal isOpen={!props.connected}>
+            <ModalHeader>Error</ModalHeader>
+            <ModalBody>
+                <div>You have disconnected. Please refresh the page.</div>
+
+            </ModalBody>
+            {/*<ModalFooter>
+                <Button onClick={() => {this.setState({ copied: false }); this.props.cancel()}}>
+                    Cancel
+                </Button>
+                <Button color="primary" onClick={this.props.submit}>
+                    Confirm
+                </Button>
+            </ModalFooter>*/}
+        </Modal>
     </div>
 }
 
@@ -128,7 +143,7 @@ Array.prototype.popPlayer = function(player) {
         console.log(i, this[i].player, player.player)
         if (this[i].player === player.player) {
             this.remove(i);
-            console.log(this.remove(i), this);
+            // console.log(this.remove(i), this);
             --i;
         }
         else if (this[i].player === user) {
@@ -203,14 +218,15 @@ class WaitingRoom extends React.Component {
         console.log('rendering', this.state.players, this.state.userPos);
         let { players } = this.state;
         if (players.length > 4) {
-            players = players.slice(4);
+            players = players.slice(0, 4);
         }
         return <div>
-            <div>Players {this.state.userPos} {user}</div>
+            <div>{players.length} Players joined {((this.state.userPos >= 4) || (this.state.userPos < 0)) === true ? <div style={{fontStyle: 'italic'}}>Spectating</div> : ''}</div>
+            <div></div>
             {players.map((info, i) => {
                 const {player, ready} = info;
                 console.log("80", info.entry);
-                return <div>{player} {ready === false ? 'Not Ready' : 'Ready    '} {this.state.userPos === i ? <span>
+                return <div style={{color: this.state.userPos === i ? '#ff2222' : '#000000'}}>{player} {ready === false ? 'Not Ready' : 'Ready    '} {this.state.userPos === i ? <span>
                     <button onClick={this.handleClick}>{ready === false ? 'Ready' : 'Cancel'}</button>
                     </span> : ''}</div>
             })}

@@ -1,8 +1,9 @@
 import flask
 from api import app
 from api.model import db
+import time
 
-NUM_HEARTS = 3
+NUM_HEARTS = 10
 
 def getHeartbeatNum(num_players):
     if num_players == 1:
@@ -16,19 +17,26 @@ def heart(room):
         user = secrets.token_hex(8)
         print('user was none')
         flask.session['user'] = user
-    print('heart', user)
-    players = db.child('games').child(room).child('heartbeats').shallow().get().val()
-    for key in list(players):
-        print(key)
-        prev = db.child('games').child(room).child('heartbeats').child(key).get().val()
-        if prev <= 0:
-            game_state = db.child('games').child(room).child('state').get().val()
-            if game_state == 'waiting':
-                db.child('games').child(room).child('heartbeats').child(key).remove()
-                db.child('games').child(room).child('players').child(key).remove()
-        else:
-            db.child('games').child(room).child('heartbeats').child(key).set(prev - 1)
-    db.child('games').child(room).child('heartbeats').child(user).set(getHeartbeatNum(len(players)))
+    curr = int(time.time())
+    print('heart', user, curr)
+
+    if db.child('games').child(room).child('players').child(user).get().val() is None:
+        context = {'disconnected': True}
+        return flask.jsonify(**context)
+
+    players = list(db.child('games').child(room).child('players').shallow().get().val())
+    heartbeats = db.child('heartbeats')
+    heartbeats.child(user).set(curr)
+    for key in players: 
+        if key != user:
+            t = db.child('heartbeats').child(key).get().val()
+            if t is not None and curr - t > NUM_HEARTS:
+                print(key, 'disconnected', curr, t)
+                game_state = db.child('games').child(room).child('state').get().val()
+                if game_state == 'waiting':
+                    db.child('heartbeats').child(key).remove()
+                    db.child('games').child(room).child('players').child(key).remove()
+
     context = {}
     return flask.jsonify(**context)
 
@@ -44,7 +52,7 @@ def ready(room):
     db.child('games').child(room).child('players').child(user).child('ready').set(True)
 
     players = db.child('games').child(room).child('players').shallow().get().val()
-    if len(players >= 4):
+    if len(players) >= 4:
         all_ready = True
         for key in players:
             if not db.child('games').child(room).child('players').child(key).child('ready').get().val():

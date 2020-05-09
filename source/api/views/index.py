@@ -17,7 +17,9 @@ def display():
 
 
     if db.child('games').child(room).child('players').child(user).get().val() is None:
-        db.child('games').child(room).child('players').child(user).set({'entry': time.time(), 'ready': False})
+        curr = time.time()
+        db.child('games').child(room).child('players').child(user).set({'entry': curr, 'ready': False})
+        db.child('heartbeats').child(user).set(curr)
     context = {
         'jsfile': 'room_bundle.js',
         'user': user,
