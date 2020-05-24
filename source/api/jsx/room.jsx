@@ -2,7 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import firebase from '../static/js/firebase.js'
+import firebase from '../static/js/firebase.js';
+import GameRoom from './game';
 
 var user = document.getElementById('user').textContent
 
@@ -61,12 +62,12 @@ class Room extends React.Component {
                 <WaitingRoom url={this.props.url} db={this.props.db.child('players')} />
             </div>
         }
-        return <div className='game'>game!!!!!!!!!!!!!
-            <div className='arena'>
-                <Hand db={this.props.db.child('hand')}/>
-            </div>
-        </div>
-  }
+        // return <div className='game'>game!!!!!!!!!!!!!
+        //     <div className='arena'>
+        //         <Hand db={this.props.db.child('hand')}/>
+        //     </div>
+        // </div>
+        return <div>game<GameRoom url={this.props.url} db={this.props.db}/></div>  }
 }
 
 
@@ -225,7 +226,7 @@ class WaitingRoom extends React.Component {
             players = players.slice(0, 4);
         }
         return <div>
-            <div>{players.length} Players joined {((this.state.userPos >= 4) || (this.state.userPos < 0)) === true ? <div style={{fontStyle: 'italic'}}>Spectating</div> : ''}</div>
+            <div>{players.length} Players joined {((this.state.userPos === null) || (this.state.userPos >= 4) || (this.state.userPos < 0)) === true ? <div style={{fontStyle: 'italic'}}>Spectating</div> : ''}</div>
             <div></div>
             {players.map((info, i) => {
                 const {player, ready} = info;

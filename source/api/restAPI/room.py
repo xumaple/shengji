@@ -1,6 +1,7 @@
 import flask
 from api import app
 from api.model import db
+from api.restAPI.game import initialize_game
 import time
 
 NUM_HEARTS = 10
@@ -59,7 +60,7 @@ def ready(room):
                 all_ready = False
                 break
         if all_ready:
-            db.child('games').child(room).child('state').set('playing')
+            initialize_game()
 
     context = {}
     return flask.jsonify(**context)
