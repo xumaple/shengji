@@ -1,0 +1,91 @@
+body {
+    height: 100%;
+    margin: 0;
+
+   -ms-user-select: none;
+   -moz-user-select: none;
+   -webkit-user-select: none;
+   user-select: none;  
+}
+
+.arena {
+    width: 100%;
+    margin-top: 50px;
+    border: 0.1em solid black;
+    text-align: center;
+}
+
+.hand {
+    height: 300px;
+    border: 0.1em solid red;
+    margin-top: 350px;
+}
+/* Clearfix (clear floats)*/
+.hand::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+.played-hand {
+    height: 150px;
+    border: 0.1em solid yellow;
+}
+
+@keyframes select-card-keyframes{
+    from { margin-top: 20px; }
+    to { margin-top: 0px; }
+}
+@keyframes unselect-card-keyframes{
+    from { margin-top: 0px; }
+    to { margin-top: 20px; }
+}
+.card {
+    float: left;
+    width: 60px;
+    
+    margin-top: 20px;
+}
+.select-card {
+    animation: select-card-keyframes 0.5s;
+}
+.card-selected {
+    float: left;
+    width: 60px;
+
+    margin-top: 0px;
+}
+.unselect-card {
+    animation: unselect-card-keyframes 0.5s;
+}
+
+@keyframes play-card-keyframes {
+    0% {
+        transform: rotate(-360deg);
+        margin-top: 50px;
+    }
+    25% {
+        transform: rotate(-270deg);
+        margin-top: 40px;
+    }
+    50% {
+        transform: rotate(-180deg);
+        margin-top: 25px;
+    }
+    75% {
+        transform: rotate(-90deg);
+        margin-top: 10px;
+    }
+    100% {
+        transform: rotate(0deg);
+        margin-top: 0px;
+    }
+}
+.play-card {
+    width: 60px;
+
+    animation: play-card-keyframes 0.5s;
+}
+
+.play-button {
+    float: right;
+}
